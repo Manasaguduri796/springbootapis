@@ -3,7 +3,9 @@ package org.sanketika.springbootdataset.controller;
 import ch.qos.logback.core.net.SyslogOutputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.sanketika.springbootdataset.Entity.Dataset;
+import org.sanketika.springbootdataset.Entity.Status;
 import org.sanketika.springbootdataset.Reposistory.DatasetRepo;
+import org.sanketika.springbootdataset.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -15,58 +17,52 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.springframework.http.ResponseEntity.status;
+
 @RestController
 @RequestMapping("/dataset")
 public class DatasetController {
 
     @Autowired
     private DatasetRepo datasetRepo;
-    @Autowired
-    ObjectMapper objectMapper;
-     @PostMapping("/create")
-     public ResponseEntity createDataset(@RequestBody String dataset){
-         try {
-              Dataset datasets=objectMapper.readValue(dataset,Dataset.class);
-
-             if (datasets.getId() == null || datasets.getId().isEmpty()) {
-                 return ResponseEntity.badRequest().body("id is required");
-             }
-             if (datasets.getDataSchema() == null) {
-                 return ResponseEntity.badRequest().body("dataschema is required");
-             }
-             if (datasets.getRouterConfig() == null) {
-                 return ResponseEntity.badRequest().body("router config is required");
-             }
-             if (datasets.getStatus() == null  || datasets.getStatus().toString().isEmpty()) {
-                 return ResponseEntity.badRequest().body("status is required");
-             }
-             datasets.setCreatedDate(LocalDateTime.now());
-             datasets.setUpdatedDate(LocalDateTime.now());
-             datasetRepo.save(datasets);
-             Map res = new HashMap();
-             res.put("message","created");
-             return ResponseEntity.status(HttpStatus.CREATED).body(res);
-
-         }
-         catch (Exception e){
-             System.out.print(toString());
-             return ResponseEntity.internalServerError().body("An Error is occured");
-         }
-     }
 
 
-     @GetMapping("/getall")
-    public List<Dataset> getAllDataset(){
-         List<Dataset> DatasetList=datasetRepo.findAll();
-         return DatasetList;
-     }
-     @GetMapping("/get/{id}")
-    public ResponseEntity<Dataset>getDataset(@PathVariable Integer id){
-         try{
-             Dataset dataset=datasetRepo.findById(id).orElse(null);
-             return ResponseEntity.ok(dataset);
-         }catch (Exception e){
-             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-         }
-     }
+    @GetMapping("/getall")
+    public List<Dataset> getAllDataset() {
+        List<Dataset> DatasetList = datasetRepo.findAll();
+        return DatasetList;
+    }
+
+    @GetMapping("/get/{id}")
+    public ResponseEntity<?> getDataset(@PathVariable String id) {
+        try {
+            if (datasetRepo.findById(id).isPresent()) {
+                return ResponseEntity.ok(datasetRepo.findById(id).get());
+            } else {
+                return ResponseEntity.badRequest().body("Requested data does not exist");
+            }
+        } catch (Exception e) {
+            return status(HttpStatus.INTERNAL_SERVER_ERROR).body("An erroroccured" + e.getMessage());
+        }
+
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<ApiResponse> createDataset(@RequestBody Dataset dataset) {
+        if (dataset.getId() == null || dataset.getId().isEmpty()) {
+            return ResponseEntity.badRequest().body(new ApiResponse("Error: primary key is required",HttpStatus.BAD_REQUEST.value()));
+        }
+
+        try {
+            Dataset savedDataset = datasetRepo.save(dataset);
+            return ResponseEntity.ok(new ApiResponse("Dataset saved successfully with ID: " + savedDataset.getId(),HttpStatus.OK.value()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse("Error while saving dataset: " + e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
+    }
 }
+
+
+
+
+

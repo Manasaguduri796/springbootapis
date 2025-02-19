@@ -1,26 +1,29 @@
 package org.sanketika.springbootdataset.Entity;
 
 import com.fasterxml.jackson.annotation.JsonRawValue;
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Entity
+@Table(name="datasets1")
 @Data
-@Table(name="datasets")
 public class Dataset {
      @Id
      private String id;
 
-     @Column(columnDefinition = "json")
-     private String dataSchema;
-
-     @Column(columnDefinition = "json")
-     private String routerConfig;
+     @JdbcTypeCode(SqlTypes.JSON)
+     @Column(columnDefinition = "jsonb") // Store as text (PostgreSQL handles it as JSON if queried properly)
+     private Map<String,Object> dataSchema;
+     @JdbcTypeCode(SqlTypes.JSON)
+     @Column(columnDefinition = "jsonb")
+     private Map<String,Object> routeConfig;
 
      @Enumerated(EnumType.STRING)
      @Column(name="status")
@@ -32,21 +35,22 @@ public class Dataset {
      @Column(name="updatedBy",nullable = false)
      private String updatedBy;
 
-     @CreationTimestamp //automatically sets when the row is created
+     @CreationTimestamp
      private LocalDateTime createdDate;
 
-     @UpdateTimestamp // updates automatically when the row is modified
+     @UpdateTimestamp
      private LocalDateTime updatedDate;
 
-     public Dataset() {}
-     public Dataset(String id ,String dataSchema,String routerConfig,Status status,String createdBy,String updatedBy){
+     public Dataset(String id, Map<String,Object> dataSchema, Map<String,Object> routeConfig, Status status, String createdBy, String updatedBy) {
           this.id = id;
-          this.dataSchema=dataSchema;
-          this.routerConfig=routerConfig;
-          this.status=status;
-          this.createdBy=createdBy;
-          this.updatedBy=updatedBy;
+          this.dataSchema = dataSchema;
+          this.routeConfig = routeConfig;
+          this.status = status;
+          this.createdBy = createdBy;
+          this.updatedBy = updatedBy;
+     }
 
+     public Dataset() {
      }
 
      public String getId() {
@@ -57,20 +61,20 @@ public class Dataset {
           this.id = id;
      }
 
-     public String getDataSchema() {
+     public Map<String,Object> getDataSchema() {
           return dataSchema;
      }
 
-     public void setDataSchema(String dataSchema) {
+     public void setDataSchema(Map<String,Object> dataSchema) {
           this.dataSchema = dataSchema;
      }
 
-     public String getRouterConfig() {
-          return routerConfig;
+     public Map<String,Object> getRouteConfig() {
+          return routeConfig;
      }
 
-     public void setRouterConfig(String routerConfig) {
-          this.routerConfig = routerConfig;
+     public void setRouteConfig(Map<String,Object> routeConfig) {
+          this.routeConfig = routeConfig;
      }
 
      public Status getStatus() {
@@ -113,6 +117,3 @@ public class Dataset {
           this.updatedDate = updatedDate;
      }
 }
-
-
-
